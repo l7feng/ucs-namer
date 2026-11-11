@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: ucs-namer
+Version: 0.1.0
+Summary: Batch translate Chinese sound-library names into UCS 8.2.1 metadata and Chinese UCS filenames.
+Author: l7feng
+License: Proprietary
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: pywebview>=5.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Requires-Dist: ruff>=0.6; extra == "dev"
+Requires-Dist: pyinstaller>=6.0; extra == "dev"
+Requires-Dist: pillow>=10; extra == "dev"

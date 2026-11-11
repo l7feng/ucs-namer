@@ -1,0 +1,2 @@
+[console_scripts]
+ucs-namer = ucs_namer.gui:run

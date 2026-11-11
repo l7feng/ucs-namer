@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ucs-namer"
+version = "0.1.0"
+description = "Batch translate Chinese sound-library names into UCS 8.2.1 metadata and Chinese UCS filenames."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [{ name = "l7feng" }]
+dependencies = ["pywebview>=5.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6", "pyinstaller>=6.0", "pillow>=10"]
+
+[project.scripts]
+ucs-namer = "ucs_namer.gui:run"
+ucs-namer-cli = "ucs_namer.cli:main"
+ucs-namer-mcp = "ucs_namer.mcp_server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ucs_namer = ["gui/assets/*.html", "gui/assets/*.ico"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

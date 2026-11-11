@@ -1,0 +1,39 @@
+# 变更记录
+
+## 0.1.0 — 2026-11-11
+
+首个可用版本。
+
+- 批量扫描文件/文件夹，支持 WAV/MP3/FLAC/AIF/AIFF/OGG；扫描只读。
+- 在线大模型翻译：OpenAI 兼容 `chat/completions`，JSON 模式，缺失条目单条重试；本地 16 类短名单约束 CatID。
+- 双名合成：英文 `CatID_FXName_CreatorID_SourceID` 写元数据；中文 `【（分类_子类）关键词】` 作文件名；保留开头编号、清理非法字符、去重关键词。
+- WAV 元数据：`bext.description` 与 iXML `SW_*`，外科替换、原子写入、回读校验；未识别 chunk 逐字节保留。
+- 执行与撤销：全量预检、改名、逐条失败报告、CSV 清单、批次 journal 与 byte 级撤销。
+- pywebview 单页界面：拖放、预览表、行内抽屉编辑、753 项分类选择、设置与连接测试、执行前确认、结果报告。
+- 打包：PyInstaller 目录版与单文件版，应用图标与版本信息。
+
+## 0.1.0 — 2026-11-11 就地更新
+
+版本号与交付目录名不变，直接更新 exe；旧目录由构建脚本改名留底。
+
+- 元数据查看：独立弹窗逐条展示 `bext` 标准字段与 iXML 全字段，空值写「无（空）」；可「弹出为独立窗口」常驻副屏，自带翻页与刷新。
+- 前后对比：执行前预览「文件现有 → 将写入」七个字段，已有值标「将被覆盖」，并列出本次不会改动的其他已有元数据；执行后从批次日志回看「执行前 → 实际写入」。
+- 批量拖入：一次拖入或多个文件夹一次选择，扫描移到后台线程，按文件夹给出新增数量与重复跳过统计。
+- 批量修改：新增独立「选中」列，支持统一设字段、查找替换、批量启停与移除、按完整父目录分组套用。
+- 保留 / 覆盖策略仍待人类裁决：本次只做显示与提醒，**未改动写入逻辑**；已有元数据被覆盖时原始 chunk 仍写进批次日志，可整批撤销。
+- 新增 `src/ucs_namer/metadata.py` 与 10 项测试；全量 60 项通过。
+
+## 0.1.0 — 2026-11-11 就地更新（AI 接入）
+
+版本号与交付目录名仍不变，同一次就地更新内追加。
+
+- 能力层抽取：新增 `src/ucs_namer/api.py`（`CoreApi`），45 个纯数据方法从 GUI 桥里平移出来；`gui/bridge.py` 只留窗口相关动作（原生文件对话框、CSV 保存对话框、独立元数据窗口），签名与行为对前端不变。
+- 本地 IPC：新增 `ipc.py`，GUI 进程在 `127.0.0.1` 随机端口监听，端口与随机 token 写入 `%LOCALAPPDATA%/ucs-namer/ipc.json`；只接受回环连接，方法白名单，私有方法与窗口方法一律拒绝。
+- 单实例：新增 `instance.py`，用命名互斥体实现；重复启动会把已有窗口顶到前台再退出，避免两个进程抢同一个 `ipc.json`。
+- 命令行：新增 `cli.py` 与 `ucs-namer-cmd.exe`，子命令 `scan / list / metadata / diff / preview / apply / undo / report / set / replace / enable / remove / folders / clear / categories`；默认转发给运行中的界面，界面没开时降级为独立会话并在 stderr 提示，独立会话用状态文件在多次调用之间保留清单。
+- MCP：新增 `mcp_server.py`，零依赖手写 stdio JSON-RPC，13 个工具（`ucs_scan`…`ucs_categories`）；启动命令 `ucs-namer-cmd.exe mcp`。
+- 写盘护栏：`apply` 不带 `--confirm`（CLI）或 `confirm=true`（MCP）时只返回预演结果，一个字节都不写；带确认才走预检 → 原子写入 → journal，返回 `journal_id` 供撤销。
+- `execute.py` 新增可按批次 id 撤销的 `undo(journal_id)`，已撤销的批次拒绝重复撤销。
+- 打包：`build.py` 新增 `--cmd` / `--all`，交付目录增加 `ucs-namer-cmd-v<版本>/`。
+- 新增 28 项测试（IPC 19 + MCP 9）；全量 88 项通过。
+- 决策记录见 `docs/adr/0004-ai-access-ipc-mcp-cli.md`。
