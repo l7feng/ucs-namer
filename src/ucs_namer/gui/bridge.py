@@ -170,7 +170,7 @@ class Bridge(CoreApi):
                 width=940,
                 height=720,
                 min_size=(720, 520),
-                background_color="#0a0e13",
+                background_color="#0b1017",
             )
         except Exception as error:  # noqa: BLE001
             return _error(f"独立窗口创建失败：{error}")
