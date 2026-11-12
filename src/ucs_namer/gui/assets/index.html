@@ -118,24 +118,13 @@ button{cursor:pointer}
   margin:0 0 11px;font-size:11px;font-weight:650;letter-spacing:1.15px;
   text-transform:uppercase;color:var(--dim);
 }
-.dropcard{
-  padding:18px 18px 14px;text-align:center;border-style:dashed;border-color:#243446;
+.tablewrap.drag{
+  border-color:var(--accent);border-style:dashed;
+  background:rgba(77,159,255,.06);
+  box-shadow:0 0 0 1px rgba(77,159,255,.18) inset,0 0 34px rgba(77,159,255,.08);
   transition:border-color .18s,background .18s,box-shadow .18s;
 }
-.dropcard.drag{
-  border-color:var(--accent);background:rgba(77,159,255,.07);
-  box-shadow:0 0 0 1px rgba(77,159,255,.18) inset,0 0 34px rgba(77,159,255,.08);
-}
-.drop-art{
-  width:54px;height:54px;margin:0 auto 10px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(circle at 50% 35%,rgba(77,159,255,.17),rgba(77,159,255,.03) 70%);
-  border:1px solid rgba(77,159,255,.16);
-}
-.drop-art svg{width:28px;height:28px;stroke:var(--accent);fill:none;stroke-width:1.6}
-.dropcard h2{font-size:14px;margin:0 0 5px;font-weight:600}
-.dropcard p{margin:0;color:var(--dim);font-size:11.5px}
-.drop-actions{display:flex;gap:8px;margin:12px 0 0}
+.drop-actions{display:flex;gap:8px;margin:14px auto 0;justify-content:center;max-width:260px}
 .drop-actions .btn{flex:1}
 .hint{color:var(--dim);font-size:11px;margin:8px 0 0;line-height:1.55}
 .card label{display:block;margin-bottom:10px}
@@ -509,20 +498,6 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
 
   <div class="workspace">
     <aside class="rail">
-      <section class="card dropcard" id="dropzone">
-        <div class="drop-art">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0 4 4m-4-4L8 8"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-        </div>
-        <h2>拖入音效文件或文件夹</h2>
-        <p>WAV / MP3 / FLAC / AIF / AIFF / OGG</p>
-        <div class="drop-actions">
-          <button id="addFolder" class="btn primary">选择文件夹</button>
-          <button id="addFiles" class="btn">添加文件</button>
-        </div>
-        <p class="hint">可一次拖入多个文件夹；「选择文件夹」支持多选。递归扫描子目录，重复文件自动跳过。</p>
-        <p class="hint" id="scanSummary" hidden></p>
-      </section>
-
       <section class="card">
         <h3>命名身份</h3>
         <label><span>CreatorID</span><input id="creator" type="text" maxlength="16" placeholder="例如 L7" autocomplete="off"></label>
@@ -572,6 +547,7 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
         </div>
         <div class="toolbar-right" id="selectionInfo">0 条</div>
       </div>
+      <p class="hint" id="scanSummary" hidden style="margin:0 2px 6px"></p>
       <div class="batchbar" id="batchBar">
         <span class="count" id="batchCount"><b>0</b> 条已选中</span>
         <button id="batchSelectAll" class="btn small">全选当前筛选</button>
@@ -588,7 +564,7 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
         <span class="spacer"></span>
         <button id="batchMore" class="btn small">批量修改…</button>
       </div>
-      <div class="tablewrap">
+      <div class="tablewrap" id="tablewrap">
         <table>
           <thead>
             <tr>
@@ -609,8 +585,13 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
             <rect x="16" y="33" width="64" height="38" rx="7"/>
             <path d="M26 52v7M32 46v19M38 40v31M44 48v15M50 38v34M56 44v22M62 49v12M68 54v5"/>
           </svg>
-          <h3>列表还是空的</h3>
-          <p>把一个音效文件夹拖进左侧区域，或点击「选择文件夹」。扫描只读取文件名与大小，不会改动素材。</p>
+          <h3>把音效文件或文件夹拖到这里</h3>
+          <p>WAV / MP3 / FLAC / AIF / AIFF / OGG</p>
+          <p>可一次拖入多个文件夹；递归扫描子目录，重复文件自动跳过。扫描只读取文件名与大小，不会改动素材。</p>
+          <div class="drop-actions">
+            <button id="addFolder" class="btn primary">选择文件夹</button>
+            <button id="addFiles" class="btn">添加文件</button>
+          </div>
         </div>
       </div>
     </section>
@@ -2448,7 +2429,10 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
     $("#drawerMetaBtn").addEventListener("click", () => openMeta(state.editingId));
     $("#drawerDiffBtn").addEventListener("click", () => openDiff(state.editingId));
 
-    window.ucsDrag = (active) => $("#dropzone").classList.toggle("drag", !!active);
+    window.ucsDrag = (active) => {
+      const t = document.getElementById("tablewrap");
+      if (t) t.classList.toggle("drag", !!active);
+    };
     window.ucsDrop = (paths) => { addPaths(paths); };
   }
 
