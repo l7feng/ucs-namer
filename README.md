@@ -16,7 +16,7 @@ python -m venv .venv
 .venv/Scripts/ucs-namer
 ```
 
-打包后的 Windows 版本见 `D:/Ai-Files/Tools/Exe/12-UCS Namer（UCS 命名翻译）/`，双击 `UCS命名翻译器.exe`。
+打包后的 Windows 版本见 `D:/Ai-Files/Tools/Exe/12-UCS Namer/`，双击 `UCS Namer.exe`。
 
 ## 使用流程
 
@@ -84,7 +84,7 @@ ucs-namer-cmd.exe replace --all --field fx_name --find Rain --replace RainHeavy
 {
   "mcpServers": {
     "ucs-namer": {
-      "command": "D:/Ai-Files/Tools/Exe/12-UCS Namer（UCS 命名翻译）/ucs-namer-cmd-v0.1.0/ucs-namer-cmd.exe",
+      "command": "D:/Ai-Files/Tools/Exe/12-UCS Namer/ucs-namer-cmd-v0.1.0/ucs-namer-cmd.exe",
       "args": ["mcp"]
     }
   }
@@ -109,7 +109,7 @@ ucs-namer-cmd.exe replace --all --field fx_name --find Rain --replace RainHeavy
 .venv/Scripts/python packaging/build.py --onedir      # 目录版
 .venv/Scripts/python packaging/build.py --onefile     # 单文件版
 .venv/Scripts/python packaging/build.py --cmd         # 命令行 / MCP 版
-.venv/Scripts/python packaging/build.py --all --inplace --out "D:/Ai-Files/Tools/Exe/12-UCS Namer（UCS 命名翻译）"   # 就地更新 exe，旧版自动留底
+.venv/Scripts/python packaging/build.py --all --inplace --out "D:/Ai-Files/Tools/Exe/12-UCS Namer"   # 就地更新 exe，旧版自动留底
 ```
 
 结构说明见 [STRUCTURE.md](STRUCTURE.md)，变更见 [CHANGELOG.md](CHANGELOG.md)，设计取舍见 `docs/adr/`。

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ucs-namer"
-version = "0.1.0"
+version = "0.1.1"
 description = "Batch translate Chinese sound-library names into UCS 8.2.1 metadata and Chinese UCS filenames."
 readme = "README.md"
 requires-python = ">=3.10"

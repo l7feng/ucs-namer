@@ -1,2 +1,4 @@
 [console_scripts]
 ucs-namer = ucs_namer.gui:run
+ucs-namer-cli = ucs_namer.cli:main
+ucs-namer-mcp = ucs_namer.mcp_server:main

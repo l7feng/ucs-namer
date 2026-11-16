@@ -69,7 +69,7 @@ def _run_window() -> int:
         width=1360,
         height=880,
         min_size=(1080, 680),
-        background_color="#0b1017",
+        background_color="#060607",
     )
     api._window_getter = lambda: window
     server = ipc.Server(api).start()

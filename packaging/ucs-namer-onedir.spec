@@ -10,7 +10,7 @@ a = Analysis(
     [str(ROOT / "packaging" / "entry.py")],
     pathex=[str(ROOT / "src")],
     binaries=[],
-    datas=[(str(ASSETS), "ucs_namer/gui/assets")],
+    datas=[(str(ASSETS / name), "ucs_namer/gui/assets") for name in ("index.html", "brand.png", "ucs-logo.png", "app.ico")],
     hiddenimports=[
         "webview.platforms.edgechromium",
         "webview.platforms.winforms",
