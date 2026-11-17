@@ -222,14 +222,15 @@ td.checkcell input:checked::after{content:"";position:absolute;left:4px;top:1px;
 .statusbadge.bad{color:#f6f6f9}.statusbadge.bad .dot{background:var(--red)}
 .statusbadge.run{color:#c8c8cd}.statusbadge.run .dot{background:var(--blue)}
 .actions{text-align:right;white-space:nowrap}
-.empty{
+/* 只作用于列表空状态容器；不要写成裸 .empty，否则会命中 catbadge.empty 与 .v.empty */
+#emptyState{
   position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:13px;color:var(--dim);padding:30px;text-align:center;
 }
-.empty svg{width:88px;height:88px;stroke:#36363c;fill:none;stroke-width:1.15;opacity:.9}
-.empty h3{margin:0;color:#9c9ca2;font-size:14px;font-weight:600}
-.empty p{margin:0;font-size:11.5px;max-width:360px;line-height:1.7}
-.empty[hidden]{display:none}
+#emptyState svg{width:88px;height:88px;stroke:#36363c;fill:none;stroke-width:1.15;opacity:.9}
+#emptyState h3{margin:0;color:#9c9ca2;font-size:14px;font-weight:600}
+#emptyState p{margin:0;font-size:11.5px;max-width:360px;line-height:1.7}
+#emptyState[hidden]{display:none}
 
 .footer{
   height:38px;flex:0 0 38px;display:flex;align-items:center;gap:12px;
