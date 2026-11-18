@@ -302,8 +302,14 @@ def _pick_category(row: dict, text: str) -> tuple[ucs.Category | None, float, st
     return None, 0.0, "本地规则 · 未匹配到任何中英文分类词"
 
 
-def _keywords_zh(text: str, category: ucs.Category) -> list[str]:
-    segments = _zh_segments(text)
+def _keywords_zh(stem: str, category: ucs.Category) -> list[str]:
+    """Chinese keywords come from the filename only.
+
+    A folder name is never used as a keyword: it repeats the whole set title on
+    every row. When the filename carries no Chinese, the UCS sub-category name
+    is the honest placeholder.
+    """
+    segments = _zh_segments(stem)
     result: list[str] = []
     seen: set[str] = set()
     for segment in segments:
@@ -313,7 +319,7 @@ def _keywords_zh(text: str, category: ucs.Category) -> list[str]:
         seen.add(key)
         result.append(segment)
     if not result:
-        result = [f"{category.category_zh}{category.subcategory_zh}"]
+        result = [category.subcategory_zh]
     return result[:5]
 
 
@@ -325,7 +331,7 @@ def apply_row(row: dict, creator: str = "", source: str = "") -> None:
     if category is None:
         row["cat_id"] = ""
         row["fx_name"] = ""
-        row["keywords_zh"] = _zh_segments(text)[:5]
+        row["keywords_zh"] = _zh_segments(stem)[:5]
         row["confidence"] = 0.0
         row["translated"] = False
         row["error"] = "本地规则未匹配到分类：请手动选择或用其它引擎"
@@ -339,7 +345,7 @@ def apply_row(row: dict, creator: str = "", source: str = "") -> None:
     if not fx:
         fx = category.subcategory.replace("_", " ").title()
         source_note = "退回子类英文名"
-    keywords = _keywords_zh(text, category)
+    keywords = _keywords_zh(stem, category)
     row["cat_id"] = category.cat_id
     row["fx_name"] = fx
     row["keywords_zh"] = keywords

@@ -17,12 +17,12 @@ VSVersionInfo(
           [
             StringStruct('CompanyName', 'l7feng'),
             StringStruct('FileDescription', 'UCS 命名翻译器'),
-            StringStruct('FileVersion', '0.1.1'),
+            StringStruct('FileVersion', '0.1.2'),
             StringStruct('InternalName', 'ucs-namer'),
             StringStruct('LegalCopyright', 'Copyright (c) 2026 l7feng'),
             StringStruct('OriginalFilename', 'UCS命名翻译器.exe'),
             StringStruct('ProductName', 'UCS 命名翻译器'),
-            StringStruct('ProductVersion', '0.1.1')
+            StringStruct('ProductVersion', '0.1.2')
           ]
         )
       ]

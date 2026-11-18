@@ -300,6 +300,11 @@ class CoreApi:
             settings = config.load()
             engine_name = engine.current(settings)
             targets = self._enabled_rows()
+            # A new run must start clean: a row that failed last time would
+            # otherwise be skipped by every engine and never recover.
+            for row in targets:
+                row["error"] = ""
+                row["translated"] = False
             try:
                 engine.translate_rows(targets, settings, progress)
             except llm.LLMError as error:

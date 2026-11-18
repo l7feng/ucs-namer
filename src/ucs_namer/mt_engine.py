@@ -208,13 +208,13 @@ def apply_row(row: dict, settings: dict, creator: str = "", source: str = "") ->
     else:
         row["cat_id"] = ""
         row["fx_name"] = ""
-        row["keywords_zh"] = local_rules._keywords_zh(text, ucs.CATEGORIES[0])
+        row["keywords_zh"] = local_rules._keywords_zh(_stem_only(row), ucs.CATEGORIES[0])
         row["translated"] = False
         row["error"] = "MT 译文未能归类：请手动选择 CatID"
         row["notes"] = "传统 MT · 未匹配到 UCS 分类"
         return
     fx = _fx_from_translation(english, category)
-    keywords = local_rules._keywords_zh(text, category)
+    keywords = local_rules._keywords_zh(_stem_only(row), category)
     provider = str(settings.get("mt_provider") or "google").lower()
     row["cat_id"] = category.cat_id
     row["fx_name"] = fx or category.subcategory.replace("_", " ").title()

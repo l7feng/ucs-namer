@@ -66,6 +66,25 @@ def test_local_rule_reports_unmatched_row():
     assert row["error"]
 
 
+def test_keywords_use_ucs_subcategory_not_folder_title():
+    folder = "018 Collected Ambiences 01【人类生活场景自然生态综合环境氛围音效-第1辑】"
+    row = _row("CA1_Ambience_Backyard_Rain.wav", folder)
+    local_rules.apply_row(row, "", "")
+
+    category = ucs.BY_ID[row["cat_id"]]
+    assert row["keywords_zh"] == [category.subcategory_zh]
+    assert "人类生活场景" not in " ".join(row["keywords_zh"])
+
+
+def test_folder_with_chinese_does_not_leak_into_keywords():
+    # A Chinese folder must not become the keyword when the filename is English.
+    row = _row("CA1_Ambience_City_Medium_Loop.wav", "04-AMB 【综合环境氛围】")
+    local_rules.apply_row(row, "", "")
+
+    assert row["keywords_zh"]
+    assert all("综合环境氛围" not in word for word in row["keywords_zh"])
+
+
 def test_local_rule_batch_and_self_check():
     rows = [_row("雨夜屋檐滴水.wav"), _row("RAINWatr_Drip.wav")]
     local_rules.translate_rows(rows, {"creator": "", "source": ""})
@@ -182,6 +201,20 @@ def test_engine_test_reports_self_check(monkeypatch):
     monkeypatch.setattr(engine, "llm", engine.llm)
     result = engine.test({"engine": "local"})
     assert result["ok"] is True and result["engine"] == "local"
+
+
+def test_second_local_run_recovers_a_row_that_failed_before():
+    # A row that failed last time still has row["error"] set; the batch entry
+    # must not skip it forever.
+    row = _row("CA1_Ambience_Backyard_Rain.wav", "04-AMB 【综合环境氛围】")
+    row["error"] = "本地规则未匹配到分类：请手动选择或用其它引擎"
+    local_rules.translate_rows([row], {"creator": "", "source": ""})
+
+    assert row.get("cat_id", "") == ""
+    # ... and once the error is cleared by the next run, it must classify again.
+    row["error"] = ""
+    local_rules.translate_rows([row], {"creator": "", "source": ""})
+    assert row["cat_id"]
 
 
 # -------------------------------------------------------------------- config

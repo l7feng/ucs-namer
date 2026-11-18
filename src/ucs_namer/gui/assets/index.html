@@ -317,6 +317,7 @@ td.checkcell input:checked::after{content:"";position:absolute;left:4px;top:1px;
 .form-grid .full{grid-column:1/-1}
 .form-grid label{display:block}
 .form-grid label span{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}
+.modal-body select{height:34px;border-radius:8px;border:1px solid var(--line);background:#0e0e10;color:var(--text);font-size:12px;padding:0 10px;width:100%}
 .form-note{color:var(--dim);font-size:11px;line-height:1.65;margin:12px 0 0;padding:10px 11px;border-radius:8px;background:rgba(255,255,255,0.039);border:1px solid rgba(255,255,255,0.095)}
 .testline{display:flex;align-items:center;gap:8px;margin-top:11px;min-height:20px;color:var(--muted);font-size:11.5px}
 .testline .dot{width:6px;height:6px;border-radius:50%;background:var(--dim)}
@@ -617,7 +618,7 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
     <div class="progress" id="progressBar"><i></i></div>
     <span class="counter" id="progressCounter"></span>
     <span class="counter" id="footerInfo">753 个 UCS 分类</span>
-    <span class="status-version" id="statusVersion">UCS 命名翻译器 | v0.1.1</span>
+    <span class="status-version" id="statusVersion">UCS 命名翻译器 | v0.1.2</span>
   </footer>
 </div>
 
@@ -682,12 +683,14 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
           <button type="button" class="engine-opt" data-engine="mt"><b>传统 MT</b><small>机器翻译出英文再按 UCS 归类，免 Key</small></button>
         </div>
       </label>
-      <label class="full" id="mtProviderRow" style="margin-top:12px;display:none"><span>MT 服务</span>
-        <select id="setMtProvider">
-          <option value="google">Google 翻译（联网，免密钥）</option>
-          <option value="argos">Argos Translate（离线，需另装）</option>
-        </select>
-      </label>
+      <div class="form-grid" id="mtProviderRow" style="margin-top:12px;display:none">
+        <label class="full"><span>MT 服务</span>
+          <select id="setMtProvider">
+            <option value="google">Google 翻译（联网，免密钥）</option>
+            <option value="argos">Argos Translate（离线，需另装）</option>
+          </select>
+        </label>
+      </div>
       <div class="form-grid" id="apiGroup" style="margin-top:14px">
         <label class="full"><span>API 地址</span><input id="setBaseUrl" type="text" placeholder="https://api.deepseek.com/v1" spellcheck="false"></label>
         <label><span>模型</span><input id="setModel" type="text" placeholder="deepseek-chat" spellcheck="false"></label>
@@ -976,7 +979,7 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
     jobTimer: null,
     busy: false,
     confirmResolve: null,
-    version: "0.1.1",
+    version: "0.1.2",
     demo: DEMO,
     selected: new Set(),
     metaId: null,
@@ -1170,6 +1173,11 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
     local: "只用 UCS 8.2.1 词表与文件名英文归类，不联网、不花钱；没法归类的行会留空等手选。",
     mt: "传统机器翻译出英文再按 UCS 词表归类，免 API Key；术语可能不准，建议抽查。",
   };
+  const ENGINE_NOTE = {
+    api: "只发送文件名、父文件夹名与候选分类；不上传音频、绝对路径或用户名。",
+    local: "只读文件名与内置 UCS 中文词表，不发出任何请求。",
+    mt: "只把文件名送去翻译（不发文件夹、不发音频）；文件名没有中文时直接走本地规则。",
+  };
   const ENGINE_CAPTION = {
     api: "在线翻译并生成 UCS 名",
     local: "本地规则生成 UCS 名",
@@ -1181,9 +1189,9 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
     const name = ["api", "local", "mt"].includes(engine) ? engine : "api";
     $$("#enginePick .engine-opt").forEach((btn) => btn.classList.toggle("on", btn.dataset.engine === name));
     $("#mtProviderRow").style.display = name === "mt" ? "" : "none";
-    $("#apiGroup").classList.toggle("disabled-group", name !== "api");
+    $("#apiGroup").style.display = name === "api" ? "" : "none";
     $("#engineNote").textContent =
-      (ENGINE_HINT[name] || "") + " 只发送文件名、父文件夹名与候选分类；不上传音频、绝对路径或用户名。";
+      (ENGINE_HINT[name] || "") + " " + (ENGINE_NOTE[name] || ENGINE_NOTE.api);
     $("#testBtn").textContent = name === "api" ? "测试连接" : "自检";
     setText("#translateBtn", ENGINE_CAPTION[name] || ENGINE_CAPTION.api);
     const pill = $("#apiPill");
@@ -1229,7 +1237,7 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
         return;
       }
       const info = await need("bootstrap");
-      state.version = info.version || "0.1.1";
+      state.version = info.version || "0.1.2";
       setText("#statusVersion", "UCS 命名翻译器 | v" + state.version);
       setSettingsUi(info.settings);
       if (info.category_count) setText("#footerInfo", info.category_count + " 个 UCS 分类");
@@ -1246,8 +1254,8 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
   }
 
   function seedDemo() {
-    state.version = "0.1.1";
-    setText("#statusVersion", "UCS 命名翻译器 | v0.1.1");
+    state.version = "0.1.2";
+    setText("#statusVersion", "UCS 命名翻译器 | v0.1.2");
     setSettingsUi({ creator: "L7", source: "SFX", write_metadata: true, api_key_set: true });
     const names = [
       ["GUNAuto", "枪炮_自动化武器", "Pistol Cock Metal", "手枪上膛，金属撞击，0001", "0001_手枪上膛_金属撞击.wav", .94, "done", true],

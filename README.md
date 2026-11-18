@@ -106,7 +106,7 @@ ucs-namer-cmd.exe replace --all --field fx_name --find Rain --replace RainHeavy
 ## 开发
 
 ```bash
-.venv/Scripts/python -m pytest      # 104 项测试
+.venv/Scripts/python -m pytest      # 107 项测试
 .venv/Scripts/ruff check .
 .venv/Scripts/python packaging/build.py --onedir      # 目录版
 .venv/Scripts/python packaging/build.py --onefile     # 单文件版
