@@ -1,5 +1,14 @@
 # 变更记录
 
+## 0.1.1 — 2026-11-18 新增（三种翻译方式）
+
+- 设置弹窗由「模型设置」改为「翻译设置」，顶部三段卡片选择翻译方式：**API 模型**（OpenAI 兼容接口，术语最灵活，需 Key 与联网）、**本地规则**（只用 UCS 中文词表与文件名英文，纯离线）、**传统 MT**（机器翻译成英文后再按 UCS 归类，免 Key）。切换即改 pill 文案、翻译按钮文案与自检按钮；非 API 模式时接口/模型/Key 分组置灰不可编辑。
+- 新增 `engine.py` 分发层：`ENGINES=("api","local","mt")`，`current/label/readiness/translate_rows/test` 共用一套接口；缺 Key、缺 Argos 模型包都在开跑前拦截并给出可执行的提示。
+- 新增 `local_rules.py`：零网络归类。证据顺序为「文件名 CatID 前缀锁定 → 文件名英文打分 → 中文词表打分」；英文打分按 cat_id 词 +10、子类词 +5（多词子类须全词命中）、类别词 +4，仅类别词命中时路由到同类 `*Misc`；中文打分按类别 +3、子类 +4、同义词按长度加权，单一 ≤2 字命中扣 3 分，低于阈值不猜。FXName 优先沿用文件名英文（≥2 个有效词），否则用内置 36 条中文描述词表拼接。未命中不静默猜测，置错误让用户手选。真实素材 307 条实测 **303 条自动归类（98.7%）**。
+- 新增 `mt_engine.py`：`google`（`translate.googleapis.com` 免密钥，30 秒超时上限）与 `argos`（离线，需自行 `pip install argostranslate` 并装中→英模型）两种后端，带进程内缓存。只翻译文件名（去扩展名与编号），归类以原文中文为准，译文只用于取 FXName 词。
+- 通用：`ucs.py` 新增公开 `score(category, text)` 供本地与 MT 引擎共用；`config.py` 增加 `engine`、`mt_provider` 两项并做白名单校验；`api.start_translate` 按引擎分派，`test_connection` 走 `engine.test`。
+- 新增 `tests/test_engines.py` 14 项；全量 102 项通过。已在 WebView2 实机验证：设置三选一、切到本地规则后跑完 303/307、CatID 列与中文名正确、顶部 pill 与按钮文案联动。
+
 ## 0.1.1 — 2026-11-17 修复（表头下方白色遮挡条）
 
 - 现象：列表顶部、表头正下方出现一条约 27px 高、两端圆角的白色横条，盖住首行内容；CatID 列同时整列为空。

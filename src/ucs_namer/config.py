@@ -17,6 +17,8 @@ DEFAULTS: dict = {
     "base_url": "https://api.deepseek.com/v1",
     "model": "deepseek-chat",
     "api_key": "",
+    "engine": "api",
+    "mt_provider": "google",
     "batch_size": 6,
     "timeout": 120,
     "temperature": 0.2,
@@ -108,6 +110,8 @@ def public_settings() -> dict:
         "base_url": current.get("base_url", ""),
         "model": current.get("model", ""),
         "api_key_set": bool(str(current.get("api_key", "")).strip()),
+        "engine": current.get("engine", "api"),
+        "mt_provider": current.get("mt_provider", "google"),
         "batch_size": int(current.get("batch_size", 6) or 6),
         "timeout": int(current.get("timeout", 120) or 120),
         "temperature": float(current.get("temperature", 0.2) or 0.2),
@@ -141,6 +145,14 @@ def update_from_ui(payload: dict) -> dict:
             pass
     if "write_metadata" in payload:
         patch["write_metadata"] = bool(payload["write_metadata"])
+    if "engine" in payload:
+        value = str(payload.get("engine") or "").strip().lower()
+        if value in ("api", "local", "mt"):
+            patch["engine"] = value
+    if "mt_provider" in payload:
+        value = str(payload.get("mt_provider") or "").strip().lower()
+        if value in ("google", "argos"):
+            patch["mt_provider"] = value
     if payload.get("clear_key"):
         patch["api_key"] = ""
     elif str(payload.get("api_key") or "").strip():

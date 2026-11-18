@@ -1,6 +1,6 @@
 # UCS 命名翻译器
 
-把中文音效文件名交给在线大模型，生成合法的 UCS 8.2.1 英文名称与中文 UCS 文件名；确认后批量改名，并给 WAV 写入 BWF `bext` 与 iXML 元数据。
+把中文音效文件名翻成英文，生成合法的 UCS 8.2.1 英文名称与中文 UCS 文件名；确认后批量改名，并给 WAV 写入 BWF `bext` 与 iXML 元数据。翻译方式三选一：API 模型、纯本地规则、传统 MT。
 
 - 英文 UCS（写入元数据）：`CatID_FXName_CreatorID_SourceID`
 - 中文 UCS（作为文件名）：`【（中文分类_中文子类）关键词1，关键词2】` + 英文 UCS + 原扩展名
@@ -21,8 +21,8 @@ python -m venv .venv
 ## 使用流程
 
 1. 一次拖入多个音效文件夹，或点「选择文件夹」（可多选）「添加文件」。支持 `.wav`、`.mp3`、`.flac`、`.aif`、`.aiff`、`.ogg`；后台递归扫描，按文件夹给出新增数量与重复跳过统计，不改动素材。
-2. 在设置里填写 OpenAI 兼容的 API 地址、模型与 Key，点「测试连接」。
-3. 点「在线翻译并生成 UCS 名」。模型只从本地检索出的 16 个候选分类中选 CatID，不接触音频、绝对路径或用户名。
+2. 打开设置 →「翻译方式」三选一：**API 模型**（填 OpenAI 兼容地址、模型与 Key，点「测试连接」）／**本地规则**（纯离线，用 UCS 中文词表 + 文件名英文归类，点「自检」）／**传统 MT**（Google 免费接口或离线 Argos，免 Key，点「自检」）。按钮文案与顶部 pill 会跟着变。
+3. 点「…生成 UCS 名」（按钮名随引擎变化）。API 模型只从本地检索出的 16 个候选分类中选 CatID，不接触音频、绝对路径或用户名；本地规则与 MT 用的是同一张 UCS 8.2.1 表，没有任何请求外发。
 4. 在预览表里核对、筛选、逐条修改；低置信度与缺失项会明确标出。文件名已以合法 CatID 开头时会锁定原分类。
 5. 勾选表格最左「选中」列后，用批量工具条统一设字段、查找替换、批量启停、按文件夹套用；行末图标可查看元数据与前后对比。
 6. 点「执行改名与写元数据」先做全量预检（目标重名、路径过长、不可写 WAV 都会拦截），确认后执行。
@@ -98,13 +98,15 @@ ucs-namer-cmd.exe replace --all --field fx_name --find Rain --replace RainHeavy
 ## 安全与隐私
 
 - API Key 只保存在 `%APPDATA%/ucs-namer/settings.json`，不写入仓库、日志或项目记录；日志只记录是否已配置。
-- 只发送原文件名、父文件夹名、Creator/Source 与候选分类，不上传音频。
+- **本地规则**方式零网络访问：只用内置 UCS 中文词表与文件名本身。
+- **传统 MT**只把文件名（去扩展名与编号）送到所选服务（Google 免费接口或本机 Argos），不发文件夹、不发音频；文件名里没有中文时直接走本地规则，不消耗翻译额度。
+- **API 模型**只发送原文件名、父文件夹名、Creator/Source 与候选分类，不上传音频。
 - 默认 `https://api.deepseek.com/v1` + `deepseek-chat`，可在设置页替换为任意 OpenAI 兼容服务；优先请求 JSON 模式，供应商不支持时自动去掉该参数重试。
 
 ## 开发
 
 ```bash
-.venv/Scripts/python -m pytest      # 88 项测试
+.venv/Scripts/python -m pytest      # 104 项测试
 .venv/Scripts/ruff check .
 .venv/Scripts/python packaging/build.py --onedir      # 目录版
 .venv/Scripts/python packaging/build.py --onefile     # 单文件版
@@ -117,6 +119,9 @@ ucs-namer-cmd.exe replace --all --field fx_name --find Rain --replace RainHeavy
 ## 已知边界
 
 - 真实供应商的限流、计费与 JSON 能力未在本机验证；默认用 DeepSeek，可自行更换。
+- Google 免密钥接口有频率限制：短时间批量翻译会返回 429。程序内置 0.6 秒间隔与 3 次退避重试，仍被限流时该条会明确报错（换「本地规则」或过一会儿再跑）。
+- Argos 离线分支需自行 `pip install argostranslate` 并安装中→英模型包，未装时设置页会提前拦截。
+- 本地规则与 MT 的归类都受 UCS 词表覆盖度限制；真实素材 307 条实测本地规则自动归类 303 条（98.7%），剩下 4 条会明确报「未匹配」让用户手选。
 - 大模型可能给出不合适的分类或英文表达，预览表是最后闸门；置信度低时应人工复核。
 - 非 WAV 格式不写元数据；如需跨格式写入需另立阶段。
 - 自带元数据的保留 / 覆盖策略待裁决；本次版本只做显示与提醒，未改动写入逻辑。

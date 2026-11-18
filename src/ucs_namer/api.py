@@ -14,7 +14,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import __version__, config, execute, llm, metadata, naming, scan, ucs
+from . import __version__, config, engine, execute, llm, metadata, naming, scan, ucs
 from . import journal as journal_store
 from .audio import wav_meta
 
@@ -266,7 +266,7 @@ class CoreApi:
     def _test_settings(self, payload: dict | None) -> dict:
         current = config.load()
         merged = dict(current)
-        for key in ("base_url", "model"):
+        for key in ("base_url", "model", "engine", "mt_provider"):
             value = str((payload or {}).get(key) or "").strip()
             if value:
                 merged[key] = value
@@ -277,11 +277,12 @@ class CoreApi:
 
     def test_connection(self, payload: dict | None = None) -> dict:
         settings = self._test_settings(payload)
+        engine_name = engine.current(settings)
 
         def worker(_progress) -> dict:
-            return llm.test_connection(settings)
+            return engine.test(settings)
 
-        return self._start_job("test", "正在测试模型连接", worker)
+        return self._start_job("test", f"正在自检 {engine.label(engine_name)}", worker)
 
     # -- translation, execution, undo ------------------------------------
     def start_translate(self) -> dict:
@@ -289,13 +290,20 @@ class CoreApi:
             return _error("请先添加素材")
         if not self._enabled_rows():
             return _error("没有启用的素材")
-        if not config.load().get("api_key"):
-            return _error("尚未填写 API Key，请先在设置中配置")
+        settings = config.load()
+        engine_name = engine.current(settings)
+        ready = engine.readiness(settings)
+        if not ready["ok"]:
+            return _error(ready["message"])
 
         def worker(progress) -> dict:
             settings = config.load()
+            engine_name = engine.current(settings)
             targets = self._enabled_rows()
-            llm.translate_rows(targets, settings, progress)
+            try:
+                engine.translate_rows(targets, settings, progress)
+            except llm.LLMError as error:
+                return {"engine": engine_name, "translated": 0, "failed": [{"id": None, "error": str(error)}], "total": len(targets)}
             failed = [
                 {"id": row.get("id"), "original": row.get("original"), "error": row.get("error")}
                 for row in targets
@@ -303,9 +311,9 @@ class CoreApi:
             ]
             naming.compose_rows(self.rows, settings["creator"], settings["source"])
             translated = sum(1 for row in targets if row.get("translated"))
-            return {"translated": translated, "failed": failed, "total": len(targets)}
+            return {"engine": engine_name, "translated": translated, "failed": failed, "total": len(targets)}
 
-        return self._start_job("translate", "准备翻译", worker)
+        return self._start_job("translate", f"准备{engine.label(engine_name)}翻译", worker)
 
     def preflight(self) -> dict:
         if not self._enabled_rows():

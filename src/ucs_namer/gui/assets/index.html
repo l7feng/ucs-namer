@@ -322,6 +322,19 @@ td.checkcell input:checked::after{content:"";position:absolute;left:4px;top:1px;
 .testline .dot{width:6px;height:6px;border-radius:50%;background:var(--dim)}
 .testline.ok{color:#cfcfd4}.testline.ok .dot{background:var(--green)}
 .testline.bad{color:#f6f6f9}.testline.bad .dot{background:var(--red)}
+.engine-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.engine-opt{
+  display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;
+  padding:9px 11px;border-radius:9px;border:1px solid rgba(255,255,255,0.11);
+  background:rgba(255,255,255,0.03);color:var(--muted);cursor:pointer;font-family:inherit;
+}
+.engine-opt b{font-size:12.5px;font-weight:600;color:var(--text)}
+.engine-opt small{font-size:10.5px;line-height:1.45;color:var(--dim)}
+.engine-opt:hover{border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.055)}
+.engine-opt.on{border-color:rgba(255,255,255,0.44);background:rgba(255,255,255,0.115)}
+.engine-opt.on b{color:#f6f6f8}
+.engine-opt.on small{color:#b6b6bd}
+.form-grid .disabled-group{opacity:.42;pointer-events:none}
 
 .picker-search{position:relative;margin-bottom:11px}
 .picker-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--dim);fill:none;stroke-width:1.7}
@@ -525,6 +538,7 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
       <section class="card tipcard">
         <h3>使用提示</h3>
         <ul>
+          <li>设置里可切换三种翻译方式：API 模型、本地规则（离线）、传统 MT。</li>
           <li>文件名已以合法 CatID 开头时，会锁定原分类，只补中文关键词。</li>
           <li>模型只能从本地短名单里选 CatID，不会编造分类。</li>
           <li>执行前有全量预检：目标重名、路径过长、WAV 不可写都会拦截。</li>
@@ -655,22 +669,35 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
   <div class="modal">
     <div class="modal-head">
       <div>
-        <h2>模型设置</h2>
-        <p>OpenAI 兼容接口；密钥只保存在本机用户目录。</p>
+        <h2>翻译设置</h2>
+        <p>三种方式任选其一；密钥只保存在本机用户目录。</p>
       </div>
       <button class="icon-btn" data-close="settingsOverlay">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-grid">
+      <label class="full"><span>翻译方式</span>
+        <div class="engine-pick" id="enginePick">
+          <button type="button" class="engine-opt" data-engine="api"><b>API 模型</b><small>OpenAI 兼容接口，术语最灵活，需 Key</small></button>
+          <button type="button" class="engine-opt" data-engine="local"><b>本地规则</b><small>只用 UCS 词表与文件名英文，不联网</small></button>
+          <button type="button" class="engine-opt" data-engine="mt"><b>传统 MT</b><small>机器翻译出英文再按 UCS 归类，免 Key</small></button>
+        </div>
+      </label>
+      <label class="full" id="mtProviderRow" style="margin-top:12px;display:none"><span>MT 服务</span>
+        <select id="setMtProvider">
+          <option value="google">Google 翻译（联网，免密钥）</option>
+          <option value="argos">Argos Translate（离线，需另装）</option>
+        </select>
+      </label>
+      <div class="form-grid" id="apiGroup" style="margin-top:14px">
         <label class="full"><span>API 地址</span><input id="setBaseUrl" type="text" placeholder="https://api.deepseek.com/v1" spellcheck="false"></label>
         <label><span>模型</span><input id="setModel" type="text" placeholder="deepseek-chat" spellcheck="false"></label>
         <label><span>批大小 <em style="color:var(--dim);font-style:normal">1–20</em></span><input id="setBatch" type="number" min="1" max="20" step="1"></label>
         <label class="full"><span>API Key</span><input id="setKey" type="password" placeholder="留空保持已保存的密钥" autocomplete="off"></label>
-        <label><span>超时（秒）</span><input id="setTimeout" type="number" min="15" max="600" step="5"></label>
         <label><span>温度</span><input id="setTemp" type="number" min="0" max="2" step="0.1"></label>
+        <label><span>超时（秒）</span><input id="setTimeout" type="number" min="15" max="600" step="5"></label>
         <label class="check full" style="margin-top:2px"><input id="clearKey" type="checkbox">清除已保存的 API Key</label>
       </div>
-      <p class="form-note">只发送文件名、父文件夹名与候选分类；不上传音频、绝对路径或用户名。默认 DeepSeek，可换成任意 OpenAI 兼容服务。</p>
+      <p class="form-note" id="engineNote">只发送文件名、父文件夹名与候选分类；不上传音频、绝对路径或用户名。</p>
       <div class="testline" id="testLine"><span class="dot"></span><span id="testText">尚未测试</span></div>
     </div>
     <div class="modal-foot">
@@ -1138,19 +1165,46 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
     $("#addFiles").disabled = state.busy;
   }
 
-  function setSettingsUi(settings) {
-    state.settings = settings || {};
-    $("#creator").value = state.settings.creator || "";
-    $("#source").value = state.settings.source || "";
-    $("#writeMeta").checked = state.settings.write_metadata !== false;
+  const ENGINE_HINT = {
+    api: "调用 OpenAI 兼容接口；术语最灵活，需要 Key 与网络。",
+    local: "只用 UCS 8.2.1 词表与文件名英文归类，不联网、不花钱；没法归类的行会留空等手选。",
+    mt: "传统机器翻译出英文再按 UCS 词表归类，免 API Key；术语可能不准，建议抽查。",
+  };
+  const ENGINE_CAPTION = {
+    api: "在线翻译并生成 UCS 名",
+    local: "本地规则生成 UCS 名",
+    mt: "MT 翻译生成 UCS 名",
+  };
+  const ENGINE_PILL = { local: "本地规则", mt: "MT 翻译" };
+
+  function applyEngineUi(engine) {
+    const name = ["api", "local", "mt"].includes(engine) ? engine : "api";
+    $$("#enginePick .engine-opt").forEach((btn) => btn.classList.toggle("on", btn.dataset.engine === name));
+    $("#mtProviderRow").style.display = name === "mt" ? "" : "none";
+    $("#apiGroup").classList.toggle("disabled-group", name !== "api");
+    $("#engineNote").textContent =
+      (ENGINE_HINT[name] || "") + " 只发送文件名、父文件夹名与候选分类；不上传音频、绝对路径或用户名。";
+    $("#testBtn").textContent = name === "api" ? "测试连接" : "自检";
+    setText("#translateBtn", ENGINE_CAPTION[name] || ENGINE_CAPTION.api);
     const pill = $("#apiPill");
-    if (state.settings.api_key_set) {
+    if (name !== "api") {
+      pill.className = "pill ok";
+      pill.innerHTML = '<span class="dot"></span><b>' + ENGINE_PILL[name] + "</b>";
+    } else if ((state.settings || {}).api_key_set) {
       pill.className = "pill ok";
       pill.innerHTML = '<span class="dot"></span><b>API 已配置</b>';
     } else {
       pill.className = "pill warn";
       pill.innerHTML = '<span class="dot"></span><b>API 未配置</b>';
     }
+  }
+
+  function setSettingsUi(settings) {
+    state.settings = settings || {};
+    $("#creator").value = state.settings.creator || "";
+    $("#source").value = state.settings.source || "";
+    $("#writeMeta").checked = state.settings.write_metadata !== false;
+    applyEngineUi(state.settings.engine || "api");
   }
 
   // ---------------------------------------------------------------- lifecycle
@@ -1571,8 +1625,15 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
     $("#setKey").value = "";
     $("#setKey").placeholder = s.api_key_set ? "已保存密钥，留空保持不变" : "sk-…";
     $("#clearKey").checked = false;
+    $("#setMtProvider").value = s.mt_provider || "google";
+    applyEngineUi(s.engine || "api");
     updateTestLine("", "尚未测试");
     openOverlay("#settingsOverlay");
+  }
+
+  function pickedEngine() {
+    const on = $("#enginePick .engine-opt.on");
+    return on ? on.dataset.engine : "api";
   }
 
   function updateTestLine(type, text) {
@@ -1590,6 +1651,8 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
       temperature: $("#setTemp").value,
       api_key: $("#setKey").value.trim(),
       clear_key: $("#clearKey").checked,
+      engine: pickedEngine(),
+      mt_provider: $("#setMtProvider").value,
     };
     if (state.demo) {
       state.settings = { ...state.settings, ...payload, api_key_set: !payload.clear_key && (payload.api_key || state.settings.api_key_set) };
@@ -1613,10 +1676,13 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
       base_url: $("#setBaseUrl").value.trim(),
       model: $("#setModel").value.trim(),
       api_key: $("#setKey").value.trim(),
+      engine: pickedEngine(),
+      mt_provider: $("#setMtProvider").value,
     };
-    updateTestLine("", "正在连接…");
+    const engine = payload.engine;
+    updateTestLine("", engine === "api" ? "正在连接…" : "正在自检…");
     if (state.demo) {
-      setTimeout(() => updateTestLine("ok", "连接正常 · 演示模式"), 500);
+      setTimeout(() => updateTestLine("ok", engine === "api" ? "连接正常 · 演示模式" : "自检通过 · 演示模式"), 500);
       return;
     }
     try {
@@ -2308,6 +2374,9 @@ body.meta-view #standalone{display:flex;flex-direction:column;height:100vh;paddi
     $("#settingsBtn").addEventListener("click", openSettings);
     $("#saveSettingsBtn").addEventListener("click", saveSettings);
     $("#testBtn").addEventListener("click", testConnection);
+    $$("#enginePick .engine-opt").forEach((btn) =>
+      btn.addEventListener("click", () => applyEngineUi(btn.dataset.engine))
+    );
     $("#creator").addEventListener("input", scheduleIdentity);
     $("#source").addEventListener("input", scheduleIdentity);
     $("#writeMeta").addEventListener("change", persistIdentity);

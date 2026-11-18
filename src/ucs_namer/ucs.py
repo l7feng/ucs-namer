@@ -117,6 +117,11 @@ def _score(category: Category, text: str) -> int:
     return score
 
 
+def score(category: Category, text: str) -> int:
+    """Public scoring entry: how strongly this category matches a description."""
+    return _score(category, _normalize(text))
+
+
 def shortlist(text: str, limit: int = 16) -> list[Category]:
     """Return the most likely categories for a Chinese/English description.
 
