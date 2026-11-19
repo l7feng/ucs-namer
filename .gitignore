@@ -9,3 +9,9 @@ dist/
 warn-*.txt
 .smoke/
 *.log
+
+# 本地备份（agent 整理，2026-11-19）
+*.bak-*
+*_bak-*
+.venv.bak-*
+
